@@ -127,11 +127,6 @@ vuetestvue/
     └── docker-compose.yml
 ```
 
-Citations:
-[1] https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/22552001/dd7c374e-aa87-4734-a414-202a614383fb/Shi-Min-Qia-Zi-Liao-Ku-Yu-Fa-SQL-Schema-1.pdf
-[2] https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/22552001/55954f37-0450-4219-a33e-96918801d2f7/Shi-Min-Qia-Gong-Neng-Gai-Yao-1.pdf
-# Vue.js 專案結構
-
 ## 根目錄
 ```markdown
 vuetestvue/
