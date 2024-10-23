@@ -27,3 +27,270 @@ npm run dev
 ```sh
 npm run build
 ```
+
+[//]: # ()
+[//]: # (vuetestvue/)
+
+[//]: # (├── src/)
+
+[//]: # (│   ├── api/                    # API請求層)
+
+[//]: # (│   │   ├── index.js           # API統一出口)
+
+[//]: # (│   │   ├── members.js         # 會員相關)
+
+[//]: # (│   │   ├── movies.js          # 電影相關)
+
+[//]: # (│   │   ├── bookings.js        # 訂位相關)
+
+[//]: # (│   │   ├── benefits.js        # 優惠相關)
+
+[//]: # (│   │   ├── citizenCards.js    # 市民卡相關)
+
+[//]: # (│   │   ├── wallets.js         # 電子錢包相關)
+
+[//]: # (│   │   └── venues.js          # 場地相關)
+
+[//]: # (│   ├── components/            # 元件)
+
+[//]: # (│   │   ├── layout/           # 布局元件)
+
+[//]: # (│   │   │   ├── Header.vue)
+
+[//]: # (│   │   │   ├── Sidebar.vue)
+
+[//]: # (│   │   │   ├── Footer.vue)
+
+[//]: # (│   │   │   └── Breadcrumb.vue)
+
+[//]: # (│   │   └── common/           # 通用元件)
+
+[//]: # (│   │       ├── BaseTable.vue)
+
+[//]: # (│   │       ├── BaseForm.vue)
+
+[//]: # (│   │       ├── BaseModal.vue)
+
+[//]: # (│   │       ├── BaseButton.vue)
+
+[//]: # (│   │       ├── BaseSearch.vue)
+
+[//]: # (│   │       ├── BasePagination.vue)
+
+[//]: # (│   │       └── BaseUpload.vue)
+
+[//]: # (│   ├── views/                 # 頁面)
+
+[//]: # (│   │   ├── members/          # 會員管理)
+
+[//]: # (│   │   ├── movies/           # 電影管理)
+
+[//]: # (│   │   ├── bookings/         # 訂位管理)
+
+[//]: # (│   │   ├── benefits/         # 優惠管理)
+
+[//]: # (│   │   ├── citizenCards/     # 市民卡管理)
+
+[//]: # (│   │   ├── wallets/          # 電子錢包管理)
+
+[//]: # (│   │   └── venues/           # 場地管理)
+
+[//]: # (│   ├── store/                # 狀態管理)
+
+[//]: # (│   │   ├── index.js         # Vuex主配置)
+
+[//]: # (│   │   └── modules/         # 模組)
+
+[//]: # (│   ├── router/              # 路由配置)
+
+[//]: # (│   │   └── index.js)
+
+[//]: # (│   ├── utils/               # 工具函數)
+
+[//]: # (│   │   ├── request.js      # Axios配置)
+
+[//]: # (│   │   ├── auth.js         # 認證相關)
+
+[//]: # (│   │   ├── validation.js   # 驗證工具)
+
+[//]: # (│   │   ├── format.js       # 格式化工具)
+
+[//]: # (│   │   ├── permission.js   # 權限控制)
+
+[//]: # (│   │   ├── storage.js      # 本地存儲)
+
+[//]: # (│   │   └── datetime.js     # 日期處理)
+
+[//]: # (│   ├── hooks/              # Vue 3鉤子)
+
+[//]: # (│   │   ├── useAuth.js)
+
+[//]: # (│   │   ├── useTable.js)
+
+[//]: # (│   │   └── useForm.js)
+
+[//]: # (│   ├── directives/         # 自定義指令)
+
+[//]: # (│   │   ├── permission.js)
+
+[//]: # (│   │   └── loading.js)
+
+[//]: # (│   ├── plugins/            # 插件)
+
+[//]: # (│   │   └── index.js)
+
+[//]: # (│   ├── locales/            # 國際化)
+
+[//]: # (│   │   ├── zh-TW.js)
+
+[//]: # (│   │   └── en.js)
+
+[//]: # (│   ├── middleware/         # 中間件)
+
+[//]: # (│   │   └── auth.js)
+
+[//]: # (│   ├── assets/            # 靜態資源)
+
+[//]: # (│   │   ├── styles/)
+
+[//]: # (│   │   └── images/)
+
+[//]: # (│   └── constants/         # 常量定義)
+
+[//]: # (│       ├── api.js)
+
+[//]: # (│       └── enums.js)
+
+[//]: # (├── tests/                 # 測試)
+
+[//]: # (│   ├── unit/)
+
+[//]: # (│   └── e2e/)
+
+[//]: # (├── .env                   # 環境變數)
+
+[//]: # (├── .env.development)
+
+[//]: # (├── .env.production)
+
+[//]: # (├── .eslintrc.js          # ESLint配置)
+
+[//]: # (├── .prettierrc           # Prettier配置)
+
+[//]: # (├── .gitignore)
+
+[//]: # (├── babel.config.js)
+
+[//]: # (├── jest.config.js)
+
+[//]: # (└── docker/               # Docker配置)
+
+[//]: # (├── Dockerfile)
+
+[//]: # (└── docker-compose.yml)
+
+# Vue.js 專案結構
+
+## 根目錄
+```markdown
+vuetestvue/
+```
+
+## 主要目錄結構
+
+### src/ 目錄
+```markdown
+src/
+```
+
+#### API請求層 (api/)
+- `index.js` - API統一出口
+- `members.js` - 會員相關
+- `movies.js` - 電影相關
+- `bookings.js` - 訂位相關
+- `benefits.js` - 優惠相關
+- `citizenCards.js` - 市民卡相關
+- `wallets.js` - 電子錢包相關
+- `venues.js` - 場地相關
+
+#### 元件 (components/)
+##### 布局元件 (layout/)
+- `Header.vue`
+- `Sidebar.vue`
+- `Footer.vue`
+- `Breadcrumb.vue`
+
+##### 通用元件 (common/)
+- `BaseTable.vue`
+- `BaseForm.vue`
+- `BaseModal.vue`
+- `BaseButton.vue`
+- `BaseSearch.vue`
+- `BasePagination.vue`
+- `BaseUpload.vue`
+
+#### 頁面 (views/)
+- `members/` - 會員管理
+- `movies/` - 電影管理
+- `bookings/` - 訂位管理
+- `benefits/` - 優惠管理
+- `citizenCards/` - 市民卡管理
+- `wallets/` - 電子錢包管理
+- `venues/` - 場地管理
+
+#### 狀態管理 (store/)
+- `index.js` - Vuex主配置
+- `modules/` - 模組
+
+#### 路由配置 (router/)
+- `index.js`
+
+#### 工具函數 (utils/)
+- `request.js` - Axios配置
+- `auth.js` - 認證相關
+- `validation.js` - 驗證工具
+- `format.js` - 格式化工具
+- `permission.js` - 權限控制
+- `storage.js` - 本地存儲
+- `datetime.js` - 日期處理
+
+#### Vue 3鉤子 (hooks/)
+- `useAuth.js`
+- `useTable.js`
+- `useForm.js`
+
+#### 自定義指令 (directives/)
+- `permission.js`
+- `loading.js`
+
+#### 插件 (plugins/)
+- `index.js`
+
+#### 國際化 (locales/)
+- `zh-TW.js`
+- `en.js`
+
+#### 中間件 (middleware/)
+- `auth.js`
+
+#### 靜態資源 (assets/)
+- `styles/`
+- `images/`
+
+#### 常量定義 (constants/)
+- `api.js`
+- `enums.js`
+
+### 測試目錄 (tests/)
+- `unit/`
+- `e2e/`
+
+### 配置文件
+- `.env` - 環境變數
+- `.env.development`
+- `.env.production`
+- `.eslintrc.js` - ESLint配置
+- `.prettierrc` - Prettier配置
+- `.gitignore`
+- `babel.config.js`
+- `jest.config.js`
