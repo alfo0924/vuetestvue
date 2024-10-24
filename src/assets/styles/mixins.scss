@@ -1,0 +1,225 @@
+// 斷點設定
+$breakpoints: (
+        'xs': 0,
+        'sm': 576px,
+        'md': 768px,
+        'lg': 992px,
+        'xl': 1200px,
+        'xxl': 1400px
+);
+
+// 響應式設計混入
+@mixin respond-to($breakpoint) {
+  @if map-has-key($breakpoints, $breakpoint) {
+    @media (min-width: map-get($breakpoints, $breakpoint)) {
+      @content;
+    }
+  } @else {
+    @warn "無效的斷點: #{$breakpoint}。";
+  }
+}
+
+// Flex 布局混入
+@mixin flex($direction: row, $justify: flex-start, $align: stretch, $wrap: nowrap) {
+  display: flex;
+  flex-direction: $direction;
+  justify-content: $justify;
+  align-items: $align;
+  flex-wrap: $wrap;
+}
+
+// Grid 布局混入
+@mixin grid($columns: 1, $gap: 1rem) {
+  display: grid;
+  grid-template-columns: repeat($columns, 1fr);
+  gap: $gap;
+}
+
+// 文字省略混入
+@mixin text-truncate($lines: 1) {
+  @if $lines == 1 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  } @else {
+    display: -webkit-box;
+    -webkit-line-clamp: $lines;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+// 陰影效果混入
+@mixin box-shadow($level: 1) {
+  @if $level == 1 {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  } @else if $level == 2 {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  } @else if $level == 3 {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// 漸變效果混入
+@mixin transition($properties...) {
+  $transitions: ();
+  @each $property in $properties {
+    $transitions: append($transitions, $property 0.3s ease, comma);
+  }
+  transition: $transitions;
+}
+
+// 按鈕樣式混入
+@mixin button-variant($bg-color, $text-color: #fff, $hover-darken: 10%) {
+  background-color: $bg-color;
+  color: $text-color;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  @include transition(background-color, transform);
+
+  &:hover {
+    background-color: darken($bg-color, $hover-darken);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+}
+
+// 卡片樣式混入
+@mixin card($padding: 1rem, $radius: 0.5rem) {
+  background-color: #fff;
+  border-radius: $radius;
+  padding: $padding;
+  @include box-shadow(1);
+}
+
+// 表單控制項混入
+@mixin form-control {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #495057;
+  background-color: #fff;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+
+  &:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  }
+
+  &:disabled {
+    background-color: #e9ecef;
+    opacity: 1;
+  }
+}
+
+// 清單樣式混入
+@mixin list-unstyled {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+// 定位混入
+@mixin position($position, $top: null, $right: null, $bottom: null, $left: null) {
+  position: $position;
+  top: $top;
+  right: $right;
+  bottom: $bottom;
+  left: $left;
+}
+
+// 絕對置中混入
+@mixin absolute-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+// 背景圖片混入
+@mixin background-image($url, $size: cover, $position: center) {
+  background-image: url($url);
+  background-size: $size;
+  background-position: $position;
+  background-repeat: no-repeat;
+}
+
+// 載入動畫混入
+@mixin loading-spinner($size: 2rem, $color: #007bff, $border-width: 0.25em) {
+  width: $size;
+  height: $size;
+  border: $border-width solid rgba($color, 0.2);
+  border-top-color: $color;
+  border-radius: 50%;
+  animation: spinner 0.8s linear infinite;
+}
+
+// 動畫關鍵幀
+@keyframes spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// 使用範例：
+/*
+.container {
+  @include respond-to('md') {
+    width: 80%;
+  }
+}
+
+.flex-container {
+  @include flex(row, center, center);
+}
+
+.grid-container {
+  @include grid(3, 1rem);
+}
+
+.text {
+  @include text-truncate(2);
+}
+
+.card {
+  @include card;
+}
+
+.button {
+  @include button-variant(#007bff);
+}
+
+.input {
+  @include form-control;
+}
+
+.list {
+  @include list-unstyled;
+}
+
+.centered {
+  @include absolute-center;
+}
+
+.hero {
+  @include background-image('/path/to/image.jpg');
+}
+
+.spinner {
+  @include loading-spinner;
+}
+*/
