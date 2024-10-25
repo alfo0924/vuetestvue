@@ -6,8 +6,8 @@ import vueInspector from 'vite-plugin-vue-inspector'
 import { visualizer } from 'rollup-plugin-visualizer'
 import viteCompression from 'vite-plugin-compression'
 import viteImagemin from 'vite-plugin-imagemin'
+import { VitePWA } from 'vite-plugin-pwa'
 
-// https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const isProduction = mode === 'production'
@@ -29,6 +29,50 @@ export default defineConfig(({ command, mode }) => {
         cache: false
       }),
       vueInspector(),
+      VitePWA({
+        registerType: 'autoUpdate',
+        includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
+        manifest: {
+          name: '市民卡系統',
+          short_name: '市民卡',
+          description: '便捷的市民服務平台',
+          theme_color: '#0d6efd',
+          background_color: '#ffffff',
+          icons: [
+            {
+              src: 'img/icons/android-chrome-192x192.png',
+              sizes: '192x192',
+              type: 'image/png'
+            },
+            {
+              src: 'img/icons/android-chrome-512x512.png',
+              sizes: '512x512',
+              type: 'image/png'
+            }
+          ],
+          start_url: '/',
+          display: 'standalone',
+          orientation: 'portrait'
+        },
+        workbox: {
+          cleanupOutdatedCaches: true,
+          skipWaiting: true,
+          clientsClaim: true,
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/api\.citizencard\.com/,
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'api-cache',
+                expiration: {
+                  maxEntries: 100,
+                  maxAgeSeconds: 60 * 60 * 24
+                }
+              }
+            }
+          ]
+        }
+      }),
       isProduction && visualizer({
         open: true,
         filename: 'dist/stats.html',
@@ -79,7 +123,9 @@ export default defineConfig(({ command, mode }) => {
         '@store': fileURLToPath(new URL('./src/store', import.meta.url)),
         '@api': fileURLToPath(new URL('./src/api', import.meta.url)),
         '@hooks': fileURLToPath(new URL('./src/hooks', import.meta.url)),
-        '@constants': fileURLToPath(new URL('./src/constants', import.meta.url))
+        '@constants': fileURLToPath(new URL('./src/constants', import.meta.url)),
+        '@layouts': fileURLToPath(new URL('./src/layouts', import.meta.url)),
+        '@services': fileURLToPath(new URL('./src/services', import.meta.url))
       },
       extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json', '.vue']
     },
@@ -129,42 +175,29 @@ export default defineConfig(({ command, mode }) => {
       chunkSizeWarningLimit: 2000,
       rollupOptions: {
         output: {
-          chunkFileNames: isProduction
-            ? 'js/[name].[hash].js'
-            : 'js/[name].js',
-          entryFileNames: isProduction
-            ? 'js/[name].[hash].js'
-            : 'js/[name].js',
-          assetFileNames: isProduction
-            ? 'assets/[name].[hash].[ext]'
-            : 'assets/[name].[ext]',
+          chunkFileNames: isProduction ? 'js/[name].[hash].js' : 'js/[name].js',
+          entryFileNames: isProduction ? 'js/[name].[hash].js' : 'js/[name].js',
+          assetFileNames: isProduction ? 'assets/[name].[hash].[ext]' : 'assets/[name].[ext]',
           manualChunks: {
-            'vue-vendor': ['vue', 'vue-router', 'pinia', 'vuex'],
-            'auth': ['jwt-decode'],
-            'utils': ['axios', 'dayjs'],
-            'ui': ['bootstrap', 'bootstrap-icons'],
-            'modules': [
-              './src/store/modules/members.js',
-              './src/store/modules/movies.js',
-              './src/store/modules/bookings.js',
-              './src/store/modules/benefits.js',
-              './src/store/modules/venues.js',
-              './src/store/modules/wallet.js'
-            ],
-            'views': [
-              './src/views/members',
-              './src/views/movies',
-              './src/views/bookings',
-              './src/views/benefits',
-              './src/views/venues',
-              './src/views/wallet'
-            ]
+            'core-vendor': ['vue', 'vue-router', 'pinia'],
+            'auth': ['jwt-decode', 'vee-validate', 'yup'],
+            'utils': ['axios', 'dayjs', 'lodash-es'],
+            'ui': ['bootstrap', 'bootstrap-icons', 'sweetalert2'],
+            'features': {
+              include: [
+                /src\/store\/modules\/.+/,
+                /src\/views\/(members|movies|bookings|benefits|venues|wallet)/
+              ]
+            },
+            'common': {
+              include: [
+                /src\/components\/common\/.+/,
+                /src\/utils\/.+/,
+                /src\/hooks\/.+/
+              ]
+            }
           }
         }
-      },
-      commonjsOptions: {
-        include: [/node_modules/],
-        transformMixedEsModules: true
       }
     },
 
@@ -188,29 +221,23 @@ export default defineConfig(({ command, mode }) => {
         'vue',
         'vue-router',
         'pinia',
-        'vuex',
         'axios',
         'dayjs',
         'jwt-decode',
         'bootstrap',
-        'bootstrap-icons'
+        'bootstrap-icons',
+        'sweetalert2',
+        'vee-validate',
+        'yup',
+        'lodash-es'
       ],
-      exclude: ['vue-demi'],
-      esbuildOptions: {
-        target: 'es2020'
-      }
-    },
-
-    preview: {
-      port: 8080,
-      host: true,
-      strictPort: true,
-      cors: true
+      exclude: ['vue-demi']
     },
 
     test: {
       globals: true,
       environment: 'happy-dom',
+      setupFiles: ['./test/setup.js'],
       coverage: {
         provider: 'v8',
         reporter: ['text', 'json', 'html', 'lcov'],
@@ -219,12 +246,12 @@ export default defineConfig(({ command, mode }) => {
           'dist/',
           'src/assets/',
           'src/locales/',
-          'src/**/*.spec.js',
-          'src/**/*.test.js',
-          'src/**/*.d.ts'
+          'test/',
+          '**/*.d.ts',
+          '**/*.spec.{js,ts}',
+          '**/*.test.{js,ts}'
         ]
-      },
-      include: ['src/**/*.{test,spec}.{js,ts}']
+      }
     },
 
     define: {
