@@ -1,4 +1,5 @@
 import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import store from './store'
@@ -11,69 +12,48 @@ import 'bootstrap-icons/font/bootstrap-icons.css'
 // 引入全局樣式
 import '@/assets/styles/global.scss'
 
+// 引入工具函數
+import { formatDate, formatDateTime, formatMoney } from '@/utils/format'
+import { hasPermission } from '@/utils/permission'
+
 // 創建 Vue 應用實例
 const app = createApp(App)
+const pinia = createPinia()
 
 // 註冊全局屬性
-app.config.globalProperties.$formatDate = (date) => {
-    if (!date) return ''
-    return new Date(date).toLocaleDateString('zh-TW')
-}
-
-app.config.globalProperties.$formatDateTime = (date) => {
-    if (!date) return ''
-    return new Date(date).toLocaleString('zh-TW')
-}
-
-app.config.globalProperties.$formatMoney = (amount) => {
-    return new Intl.NumberFormat('zh-TW', {
-        style: 'currency',
-        currency: 'TWD'
-    }).format(amount)
+app.config.globalProperties.$format = {
+    date: formatDate,
+    dateTime: formatDateTime,
+    money: formatMoney
 }
 
 // 註冊全局指令
 app.directive('permission', {
     mounted(el, binding) {
-        const userRole = store.state.auth.userRole
-        const requiredRole = binding.value
-        if (requiredRole && userRole !== requiredRole) {
-            el.style.display = 'none'
+        if (!hasPermission(binding.value)) {
+            el.parentNode?.removeChild(el)
         }
     }
 })
 
 // 註冊全局組件
-import BaseButton from '@/components/common/BaseButton.vue'
-import BaseTable from '@/components/common/BaseTable.vue'
-import BaseForm from '@/components/common/BaseForm.vue'
-import BaseModal from '@/components/common/BaseModal.vue'
-import BaseSearch from '@/components/common/BaseSearch.vue'
-import BasePagination from '@/components/common/BasePagination.vue'
-import BaseUpload from '@/components/common/BaseUpload.vue'
-
-app.component('BaseButton', BaseButton)
-app.component('BaseTable', BaseTable)
-app.component('BaseForm', BaseForm)
-app.component('BaseModal', BaseModal)
-app.component('BaseSearch', BaseSearch)
-app.component('BasePagination', BasePagination)
-app.component('BaseUpload', BaseUpload)
+const modules = import.meta.glob('@/components/common/*.vue', { eager: true })
+Object.entries(modules).forEach(([path, module]) => {
+    const componentName = path.split('/').pop().replace('.vue', '')
+    app.component(componentName, module.default)
+})
 
 // 全局錯誤處理
 app.config.errorHandler = (err, vm, info) => {
     console.error('全局錯誤:', err)
-    console.error('錯誤組件:', vm)
-    console.error('錯誤信息:', info)
-    // 可以在這裡添加錯誤上報邏輯
+    store.dispatch('setError', err.message)
 }
 
 // 註冊全局 mixin
 app.mixin({
     methods: {
-        // 通用確認對話框
-        async confirm(message, title = '確認') {
-            return new Promise((resolve) => {
+        async $confirm(message, title = '確認') {
+            return new Promise(resolve => {
                 const modal = new bootstrap.Modal(document.createElement('div'))
                 modal._element.innerHTML = `
           <div class="modal-dialog">
@@ -104,33 +84,35 @@ app.mixin({
             })
         },
 
-        // 通用提示訊息
-        showMessage(message, type = 'success') {
+        $toast(message, type = 'success') {
             const toast = document.createElement('div')
             toast.className = `toast align-items-center text-white bg-${type}`
             toast.setAttribute('role', 'alert')
             toast.innerHTML = `
         <div class="d-flex">
-          <div class="toast-body">
-            ${message}
-          </div>
+          <div class="toast-body">${message}</div>
           <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
         </div>
       `
             document.body.appendChild(toast)
-            new bootstrap.Toast(toast).show()
-            setTimeout(() => {
+            const bsToast = new bootstrap.Toast(toast)
+            bsToast.show()
+            toast.addEventListener('hidden.bs.toast', () => {
                 document.body.removeChild(toast)
-            }, 3000)
+            })
         }
     }
 })
 
 // 路由守衛
-router.beforeEach((to, from, next) => {
-    // 檢查是否需要登入
+router.beforeEach(async (to, from, next) => {
+    // 設置頁面標題
+    document.title = to.meta.title ? `${to.meta.title} - 市民卡系統` : '市民卡系統'
+
+    // 檢查認證狀態
     if (to.matched.some(record => record.meta.requiresAuth)) {
-        if (!store.state.auth.isLoggedIn) {
+        const isAuthenticated = await store.dispatch('auth/checkAuth')
+        if (!isAuthenticated) {
             next({
                 path: '/login',
                 query: { redirect: to.fullPath }
@@ -140,8 +122,8 @@ router.beforeEach((to, from, next) => {
     }
 
     // 檢查權限
-    if (to.meta.role && store.state.auth.userRole !== to.meta.role) {
-        next({ path: '/403' })
+    if (to.meta.permission && !hasPermission(to.meta.permission)) {
+        next('/403')
         return
     }
 
@@ -149,42 +131,38 @@ router.beforeEach((to, from, next) => {
 })
 
 // 掛載 Vue 實例
+app.use(pinia)
 app.use(router)
 app.use(store)
 app.mount('#app')
 
-// 在開發環境下啟用 Vue Devtools
-if (process.env.NODE_ENV === 'development') {
-    const { worker } = require('./mocks/browser')
+// 開發環境配置
+if (import.meta.env.DEV) {
+    // 啟用 Mock Service Worker
+    const { worker } = await import('./mocks/browser')
     worker.start()
 }
 
-// 處理未捕獲的 Promise 錯誤
+// 錯誤處理
 window.addEventListener('unhandledrejection', event => {
     console.error('未處理的 Promise 錯誤:', event.reason)
-    // 可以在這裡添加錯誤上報邏輯
+    store.dispatch('setError', event.reason.message)
 })
 
-// 處理全局錯誤
-window.onerror = function(message, source, lineno, colno, error) {
-    console.error('全局 JavaScript 錯誤:', {
-        message,
-        source,
-        lineno,
-        colno,
-        error
-    })
-    // 可以在這裡添加錯誤上報邏輯
+window.onerror = (message, source, lineno, colno, error) => {
+    console.error('全局 JavaScript 錯誤:', { message, source, lineno, colno, error })
+    store.dispatch('setError', message)
     return false
 }
 
-// 註冊 Service Worker（如果需要）
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js').then(registration => {
+// PWA 配置
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+    window.addEventListener('load', async () => {
+        try {
+            const registration = await navigator.serviceWorker.register('/sw.js')
             console.log('SW registered:', registration)
-        }).catch(error => {
+        } catch (error) {
             console.error('SW registration failed:', error)
-        })
+        }
     })
 }

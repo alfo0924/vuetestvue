@@ -1,18 +1,20 @@
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
-import path from 'path'
+import eslintPlugin from 'vite-plugin-eslint'
+import vueInspector from 'vite-plugin-vue-inspector'
+import { visualizer } from 'rollup-plugin-visualizer'
+import viteCompression from 'vite-plugin-compression'
+import viteImagemin from 'vite-plugin-imagemin'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
-  // 載入環境變數
   const env = loadEnv(mode, process.cwd(), '')
+  const isProduction = mode === 'production'
 
   return {
-    // 基本配置
     base: env.VITE_BASE_URL || '/',
 
-    // 插件配置
     plugins: [
       vue({
         template: {
@@ -20,25 +22,70 @@ export default defineConfig(({ command, mode }) => {
             isCustomElement: tag => tag.startsWith('ion-')
           }
         }
+      }),
+      eslintPlugin({
+        include: ['src/**/*.{js,vue}'],
+        exclude: ['node_modules/**', 'dist/**'],
+        cache: false
+      }),
+      vueInspector(),
+      isProduction && visualizer({
+        open: true,
+        filename: 'dist/stats.html',
+        gzipSize: true,
+        brotliSize: true
+      }),
+      isProduction && viteCompression({
+        verbose: true,
+        algorithm: 'gzip',
+        ext: '.gz'
+      }),
+      isProduction && viteImagemin({
+        gifsicle: {
+          optimizationLevel: 7,
+          interlaced: false
+        },
+        optipng: {
+          optimizationLevel: 7
+        },
+        mozjpeg: {
+          quality: 80
+        },
+        pngquant: {
+          quality: [0.8, 0.9],
+          speed: 4
+        },
+        svgo: {
+          plugins: [
+            {
+              name: 'removeViewBox'
+            },
+            {
+              name: 'removeEmptyAttrs',
+              active: false
+            }
+          ]
+        }
       })
-    ],
+    ].filter(Boolean),
 
-    // 解析配置
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
-        '~': path.resolve(__dirname, 'src'),
-        'assets': path.resolve(__dirname, 'src/assets'),
-        'components': path.resolve(__dirname, 'src/components'),
-        'views': path.resolve(__dirname, 'src/views'),
-        'utils': path.resolve(__dirname, 'src/utils')
+        '@assets': fileURLToPath(new URL('./src/assets', import.meta.url)),
+        '@components': fileURLToPath(new URL('./src/components', import.meta.url)),
+        '@views': fileURLToPath(new URL('./src/views', import.meta.url)),
+        '@utils': fileURLToPath(new URL('./src/utils', import.meta.url)),
+        '@store': fileURLToPath(new URL('./src/store', import.meta.url)),
+        '@api': fileURLToPath(new URL('./src/api', import.meta.url)),
+        '@hooks': fileURLToPath(new URL('./src/hooks', import.meta.url)),
+        '@constants': fileURLToPath(new URL('./src/constants', import.meta.url))
       },
-      extensions: ['.js', '.jsx', '.ts', '.tsx', '.json', '.vue']
+      extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json', '.vue']
     },
 
-    // 服務器配置
     server: {
-      host: '0.0.0.0',
+      host: true,
       port: 8080,
       strictPort: true,
       https: false,
@@ -48,46 +95,81 @@ export default defineConfig(({ command, mode }) => {
         '/api': {
           target: env.VITE_API_URL,
           changeOrigin: true,
-          rewrite: path => path.replace(/^\/api/, '')
+          rewrite: path => path.replace(/^\/api/, ''),
+          secure: false,
+          ws: true,
+          timeout: 30000
         },
         '/upload': {
           target: env.VITE_UPLOAD_URL,
           changeOrigin: true,
-          rewrite: path => path.replace(/^\/upload/, '')
+          rewrite: path => path.replace(/^\/upload/, ''),
+          secure: false
+        },
+        '/ws': {
+          target: env.VITE_WS_URL,
+          ws: true,
+          changeOrigin: true
         }
+      },
+      watch: {
+        usePolling: true
       }
     },
 
-    // 建置配置
     build: {
-      target: 'es2015',
+      target: ['es2020', 'edge88', 'firefox78', 'chrome87', 'safari14'],
       outDir: 'dist',
       assetsDir: 'assets',
       assetsInlineLimit: 4096,
       cssCodeSplit: true,
-      sourcemap: false,
-      minify: 'terser',
-      terserOptions: {
-        compress: {
-          drop_console: true,
-          drop_debugger: true
-        }
-      },
+      sourcemap: !isProduction,
+      minify: isProduction ? 'esbuild' : false,
+      reportCompressedSize: false,
+      chunkSizeWarningLimit: 2000,
       rollupOptions: {
         output: {
-          chunkFileNames: 'js/[name]-[hash].js',
-          entryFileNames: 'js/[name]-[hash].js',
-          assetFileNames: '[ext]/[name]-[hash].[ext]',
+          chunkFileNames: isProduction
+            ? 'js/[name].[hash].js'
+            : 'js/[name].js',
+          entryFileNames: isProduction
+            ? 'js/[name].[hash].js'
+            : 'js/[name].js',
+          assetFileNames: isProduction
+            ? 'assets/[name].[hash].[ext]'
+            : 'assets/[name].[ext]',
           manualChunks: {
-            'vendor': ['vue', 'vue-router', 'vuex', 'axios'],
-            'element-plus': ['element-plus']
+            'vue-vendor': ['vue', 'vue-router', 'pinia', 'vuex'],
+            'auth': ['jwt-decode'],
+            'utils': ['axios', 'dayjs'],
+            'ui': ['bootstrap', 'bootstrap-icons'],
+            'modules': [
+              './src/store/modules/members.js',
+              './src/store/modules/movies.js',
+              './src/store/modules/bookings.js',
+              './src/store/modules/benefits.js',
+              './src/store/modules/venues.js',
+              './src/store/modules/wallet.js'
+            ],
+            'views': [
+              './src/views/members',
+              './src/views/movies',
+              './src/views/bookings',
+              './src/views/benefits',
+              './src/views/venues',
+              './src/views/wallet'
+            ]
           }
         }
+      },
+      commonjsOptions: {
+        include: [/node_modules/],
+        transformMixedEsModules: true
       }
     },
 
-    // CSS 配置
     css: {
+      devSourcemap: true,
       preprocessorOptions: {
         scss: {
           additionalData: `
@@ -95,48 +177,60 @@ export default defineConfig(({ command, mode }) => {
             @import "@/assets/styles/mixins.scss";
           `
         }
+      },
+      modules: {
+        localsConvention: 'camelCaseOnly'
       }
     },
 
-    // 優化配置
     optimizeDeps: {
       include: [
         'vue',
         'vue-router',
+        'pinia',
         'vuex',
         'axios',
         'dayjs',
-        'lodash-es'
-      ]
-    },
-
-    // PWA 配置
-    pwa: {
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
-      manifest: {
-        name: '市民卡系統',
-        short_name: '市民卡',
-        description: '便捷的市民服務平台',
-        theme_color: '#0d6efd',
-        background_color: '#ffffff',
-        icons: [
-          {
-            src: 'img/icons/android-chrome-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'img/icons/android-chrome-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
+        'jwt-decode',
+        'bootstrap',
+        'bootstrap-icons'
+      ],
+      exclude: ['vue-demi'],
+      esbuildOptions: {
+        target: 'es2020'
       }
     },
 
-    // 環境變數配置
+    preview: {
+      port: 8080,
+      host: true,
+      strictPort: true,
+      cors: true
+    },
+
+    test: {
+      globals: true,
+      environment: 'happy-dom',
+      coverage: {
+        provider: 'v8',
+        reporter: ['text', 'json', 'html', 'lcov'],
+        exclude: [
+          'node_modules/',
+          'dist/',
+          'src/assets/',
+          'src/locales/',
+          'src/**/*.spec.js',
+          'src/**/*.test.js',
+          'src/**/*.d.ts'
+        ]
+      },
+      include: ['src/**/*.{test,spec}.{js,ts}']
+    },
+
     define: {
+      __VUE_OPTIONS_API__: true,
+      __VUE_PROD_DEVTOOLS__: !isProduction,
+      __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: !isProduction,
       'process.env': env
     }
   }
