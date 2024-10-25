@@ -1,13 +1,168 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <link rel="icon" href="/favicon.ico">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vite App</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta name="description" content="市民卡系統 - 便捷的市民服務平台">
+  <meta name="keywords" content="市民卡,電子票券,優惠管理,便民服務">
+  <meta name="author" content="市民卡團隊">
+
+  <!-- 安全性標頭 -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+
+  <!-- PWA 相關 -->
+  <link rel="icon" href="<%= BASE_URL %>favicon.ico">
+  <link rel="apple-touch-icon" href="<%= BASE_URL %>img/icons/apple-touch-icon.png">
+  <link rel="manifest" href="<%= BASE_URL %>manifest.json">
+  <meta name="theme-color" content="#0d6efd">
+
+  <!-- 預載入關鍵資源 -->
+  <link rel="preconnect" href="<%= VUE_APP_API_URL %>">
+  <link rel="preload" href="<%= BASE_URL %>fonts/custom-font.woff2" as="font" type="font/woff2" crossorigin>
+
+  <!-- 樣式表 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css" rel="stylesheet">
+
+  <title><%= htmlWebpackPlugin.options.title %></title>
+
+  <!-- 離線提示 -->
+  <style>
+      .offline-alert {
+          display: none;
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          padding: 15px;
+          background-color: #dc3545;
+          color: white;
+          border-radius: 4px;
+          z-index: 9999;
+      }
+
+      .app-loading {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: #f8f9fa;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 9999;
+      }
+
+      .app-loading__spinner {
+          width: 50px;
+          height: 50px;
+          border: 5px solid #f3f3f3;
+          border-top: 5px solid #0d6efd;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+      }
+
+      .skip-link {
+          position: absolute;
+          top: -40px;
+          left: 0;
+          padding: 8px;
+          background-color: #000;
+          color: #fff;
+          z-index: 100;
+      }
+
+      .skip-link:focus {
+          top: 0;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+          * {
+              animation-duration: 0.01ms !important;
+              animation-iteration-count: 1 !important;
+              transition-duration: 0.01ms !important;
+              scroll-behavior: auto !important;
+          }
+      }
+  </style>
+</head>
+<body>
+<!-- 無障礙跳過導航 -->
+<a href="#app" class="skip-link">跳到主要內容</a>
+
+<!-- noscript 提示 -->
+<noscript>
+  <strong>很抱歉，市民卡系統需要啟用 JavaScript 才能正常運作。請啟用後重試。</strong>
+</noscript>
+
+<!-- 應用程式載入提示 -->
+<div class="app-loading" id="appLoading">
+  <div class="app-loading__spinner"></div>
+</div>
+
+<!-- 離線提示 -->
+<div class="offline-alert" id="offlineAlert">
+  您目前處於離線狀態，部分功能可能無法使用。
+</div>
+
+<!-- 主要應用程式容器 -->
+<div id="app"></div>
+
+<!-- 錯誤回報容器 -->
+<div id="error-container"></div>
+
+<!-- 腳本 -->
+<script>
+  // 移除載入提示
+  window.addEventListener('load', function() {
+    document.getElementById('appLoading').style.display = 'none';
+  });
+
+  // 離線狀態處理
+  window.addEventListener('offline', function() {
+    document.getElementById('offlineAlert').style.display = 'block';
+  });
+
+  window.addEventListener('online', function() {
+    document.getElementById('offlineAlert').style.display = 'none';
+  });
+
+  // 錯誤處理
+  window.onerror = function(message, source, lineno, colno, error) {
+    const errorContainer = document.getElementById('error-container');
+    if (errorContainer) {
+      errorContainer.innerHTML = `
+          <div class="alert alert-danger">
+            發生錯誤，請重新整理頁面或聯絡客服。
+            <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+          </div>
+        `;
+    }
+    // 可以在這裡添加錯誤上報邏輯
+    return false;
+  };
+</script>
+
+<!-- 外部腳本 -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Google Analytics -->
+<% if (process.env.NODE_ENV === 'production' && process.env.VUE_APP_GA_ID) { %>
+<script async src="https://www.googletagmanager.com/gtag/js?id=<%= VUE_APP_GA_ID %>"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', '<%= VUE_APP_GA_ID %>');
+</script>
+<% } %>
+</body>
 </html>

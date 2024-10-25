@@ -1,8 +1,58 @@
 {
   "compilerOptions": {
+    "target": "es2020",
+    "module": "esnext",
+    "baseUrl": "./",
+    "moduleResolution": "node",
     "paths": {
-      "@/*": ["./src/*"]
-    }
+      "@/*": [
+        "src/*"
+      ],
+      "~/*": [
+        "src/*"
+      ]
+    },
+    "lib": [
+      "esnext",
+      "dom",
+      "dom.iterable",
+      "scripthost"
+    ],
+    "jsx": "preserve",
+    "strict": true,
+    "noEmit": true,
+    "experimentalDecorators": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "useDefineForClassFields": true,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
   },
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*.js",
+    "src/**/*.jsx",
+    "src/**/*.vue",
+    "src/**/*.json",
+    "tests/**/*.js",
+    "tests/**/*.jsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    ".nuxt",
+    "**/*.spec.js"
+  ],
+  "vueCompilerOptions": {
+    "target": 3,
+    "experimentalDisableTemplateSupport": false
+  }
 }

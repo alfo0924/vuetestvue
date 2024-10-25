@@ -1,23 +1,98 @@
 {
-  "name": "vuetestvue",
-  "version": "0.0.0",
+  "name": "citizen-card-system",
+  "version": "1.0.0",
   "private": true,
-  "type": "module",
+  "description": "市民卡系統 - 便捷的市民服務平台",
+  "author": "市民卡團隊",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
+    "serve": "vite preview",
     "build": "vite build",
-    "preview": "vite preview"
+    "test:unit": "jest --coverage",
+    "test:e2e": "cypress run",
+    "lint": "eslint --ext .js,.vue src",
+    "lint:fix": "eslint --ext .js,.vue src --fix",
+    "format": "prettier --write \"src/**/*.{js,vue,scss,json}\"",
+    "prepare": "husky install",
+    "commit": "git-cz",
+    "analyze": "vite build --mode analyze"
   },
   "dependencies": {
-    "@popperjs/core": "^2.11.8",
-    "axios": "^1.7.7",
-    "bootstrap": "^5.3.3",
-    "vue": "^3.5.12",
-    "vue-router": "^4.4.5",
+    "axios": "^1.6.2",
+    "bootstrap": "^5.3.2",
+    "bootstrap-icons": "^1.11.2",
+    "core-js": "^3.33.3",
+    "dayjs": "^1.11.10",
+    "jwt-decode": "^4.0.0",
+    "pinia": "^2.1.7",
+    "vue": "^3.3.9",
+    "vue-router": "^4.2.5",
     "vuex": "^4.1.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.1.4",
-    "vite": "^5.4.8"
-  }
+    "@babel/core": "^7.23.3",
+    "@babel/eslint-parser": "^7.23.3",
+    "@babel/preset-env": "^7.23.3",
+    "@commitlint/cli": "^18.4.3",
+    "@commitlint/config-conventional": "^18.4.3",
+    "@vitejs/plugin-vue": "^4.5.0",
+    "@vue/compiler-sfc": "^3.3.9",
+    "@vue/eslint-config-prettier": "^8.0.0",
+    "@vue/test-utils": "^2.4.2",
+    "autoprefixer": "^10.4.16",
+    "babel-jest": "^29.7.0",
+    "commitizen": "^4.3.0",
+    "cypress": "^13.6.0",
+    "cz-conventional-changelog": "^3.3.0",
+    "eslint": "^8.54.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "eslint-plugin-vue": "^9.18.1",
+    "husky": "^8.0.3",
+    "jest": "^29.7.0",
+    "lint-staged": "^15.1.0",
+    "postcss": "^8.4.31",
+    "prettier": "^3.1.0",
+    "sass": "^1.69.5",
+    "vite": "^5.0.2",
+    "vitest": "^0.34.6"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "lint-staged": {
+    "*.{js,vue}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{scss,css}": [
+      "prettier --write"
+    ]
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ],
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/citizen-card-system.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/citizen-card-system/issues"
+  },
+  "homepage": "https://github.com/your-username/citizen-card-system#readme",
+  "keywords": [
+    "vue",
+    "市民卡",
+    "電子票券",
+    "優惠管理",
+    "便民服務"
+  ]
 }
