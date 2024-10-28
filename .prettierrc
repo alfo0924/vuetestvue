@@ -20,22 +20,55 @@
     {
       "files": "*.vue",
       "options": {
-        "parser": "vue"
+        "parser": "vue",
+        "singleQuote": true,
+        "semi": false
       }
     },
     {
-      "files": "*.scss",
+      "files": ["*.scss", "*.css"],
       "options": {
-        "parser": "scss"
+        "parser": "scss",
+        "singleQuote": true
       }
     },
     {
       "files": "*.json",
       "options": {
-        "parser": "json"
+        "parser": "json",
+        "trailingComma": "none"
+      }
+    },
+    {
+      "files": "*.md",
+      "options": {
+        "parser": "markdown",
+        "proseWrap": "always"
       }
     }
   ],
-  "plugins": ["prettier-plugin-tailwindcss"],
-  "tailwindConfig": "./tailwind.config.js"
+  "vueIndentScriptAndStyle": true,
+  "requirePragma": false,
+  "insertPragma": false,
+  "rangeStart": 0,
+  "rangeEnd": Infinity,
+  "filepath": undefined,
+  "requireConfig": false,
+  "useTabs": false,
+  "tabWidth": 2,
+  "bracketSameLine": false,
+  "jsxBracketSameLine": false,
+  "htmlWhitespaceSensitivity": "css",
+  "endOfLine": "lf",
+  "embeddedLanguageFormatting": "auto",
+  "singleAttributePerLine": false,
+  "printWidth": 100,
+  "proseWrap": "preserve",
+  "quoteProps": "as-needed",
+  "semi": true,
+  "singleQuote": true,
+  "trailingComma": "es5",
+  "arrowParens": "avoid",
+  "jsxSingleQuote": false,
+  "bracketSpacing": true
 }

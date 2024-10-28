@@ -5,6 +5,7 @@ import router from './router'
 import store from './store'
 import i18n from './i18n'
 import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/zh-tw'
 
 // 引入 Bootstrap 和 Bootstrap Icons
@@ -13,7 +14,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 
 // 引入全局樣式
-import '@/assets/styles/global.scss'
+import '@/assets/styles/main.scss'
 
 // 引入工具函數
 import { formatDate, formatDateTime, formatMoney, formatCardNumber } from '@/utils/format'
@@ -24,8 +25,24 @@ import { useStorage } from '@/utils/storage'
 // 引入全局組件
 import BaseComponents from '@/components/common'
 
+// 引入 SweetAlert2
+import Swal from 'sweetalert2'
+import 'sweetalert2/dist/sweetalert2.min.css'
+
+// 引入進度條
+import NProgress from 'nprogress'
+import 'nprogress/nprogress.css'
+
 // 設定 dayjs
 dayjs.locale('zh-tw')
+dayjs.extend(relativeTime)
+
+// 設定 NProgress
+NProgress.configure({
+    showSpinner: false,
+    minimum: 0.1,
+    trickleSpeed: 200
+})
 
 // 創建 Vue 應用實例
 const app = createApp(App)
@@ -36,11 +53,13 @@ app.config.globalProperties.$format = {
     date: formatDate,
     dateTime: formatDateTime,
     money: formatMoney,
-    cardNumber: formatCardNumber
+    cardNumber: formatCardNumber,
+    relativeTime: (date) => dayjs(date).fromNow()
 }
 
 app.config.globalProperties.$validate = validateForm
 app.config.globalProperties.$storage = useStorage
+app.config.globalProperties.$dayjs = dayjs
 
 // 註冊全局指令
 app.directive('permission', {
@@ -57,7 +76,7 @@ app.use(BaseComponents)
 // 全局錯誤處理
 app.config.errorHandler = (err, vm, info) => {
     console.error('全局錯誤:', err)
-    store.dispatch('setError', {
+    store.dispatch('app/setError', {
         message: err.message,
         type: 'error',
         stack: err.stack
@@ -74,63 +93,34 @@ app.mixin({
                 type = 'primary'
             } = options
 
-            return new Promise(resolve => {
-                const modal = new bootstrap.Modal(document.createElement('div'))
-                modal._element.innerHTML = `
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">${title}</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <p>${message}</p>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                    ${cancelText}
-                                </button>
-                                <button type="button" class="btn btn-${type} confirm-btn">
-                                    ${confirmText}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `
-                modal._element.querySelector('.confirm-btn').onclick = () => {
-                    modal.hide()
-                    resolve(true)
-                }
-                modal._element.querySelector('.btn-close').onclick = () => {
-                    modal.hide()
-                    resolve(false)
-                }
-                modal.show()
-            })
+            return Swal.fire({
+                title,
+                text: message,
+                icon: type === 'primary' ? 'question' : type,
+                showCancelButton: true,
+                confirmButtonText: confirmText,
+                cancelButtonText: cancelText,
+                confirmButtonColor: type === 'primary' ? '#0d6efd' : `var(--bs-${type})`,
+                reverseButtons: true
+            }).then(result => result.isConfirmed)
         },
 
         $toast(message, type = 'success', duration = 3000) {
-            const toast = document.createElement('div')
-            toast.className = `toast align-items-center text-white bg-${type}`
-            toast.setAttribute('role', 'alert')
-            toast.setAttribute('aria-live', 'assertive')
-            toast.setAttribute('aria-atomic', 'true')
-            toast.innerHTML = `
-                <div class="d-flex">
-                    <div class="toast-body">
-                        <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
-                        ${message}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                </div>
-            `
-            document.body.appendChild(toast)
-            const bsToast = new bootstrap.Toast(toast, {
-                delay: duration
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: duration,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                }
             })
-            bsToast.show()
-            toast.addEventListener('hidden.bs.toast', () => {
-                document.body.removeChild(toast)
+
+            Toast.fire({
+                icon: type,
+                title: message
             })
         }
     }
@@ -138,7 +128,6 @@ app.mixin({
 
 // 路由守衛
 router.beforeEach(async (to, from, next) => {
-    // 顯示載入進度條
     NProgress.start()
 
     // 設置頁面標題
@@ -156,19 +145,18 @@ router.beforeEach(async (to, from, next) => {
             })
             return
         }
-    }
 
-    // 檢查權限
-    if (to.meta.permission && !hasPermission(to.meta.permission)) {
-        next('/403')
-        return
+        // 檢查權限
+        if (to.meta.permission && !hasPermission(to.meta.permission)) {
+            next('/403')
+            return
+        }
     }
 
     next()
 })
 
 router.afterEach(() => {
-    // 隱藏載入進度條
     NProgress.done()
 })
 
@@ -181,46 +169,43 @@ app.mount('#app')
 
 // 開發環境配置
 if (import.meta.env.DEV) {
-    // 啟用 Vue Devtools
-    app.config.devtools = true
+    const setupDevTools = async () => {
+        app.config.devtools = true
 
-    // 啟用 Mock Service Worker
-    if (import.meta.env.VITE_ENABLE_MOCK === 'true') {
-        const { worker } = await import('./mocks/browser')
-        worker.start()
+        if (import.meta.env.VITE_ENABLE_MOCK === 'true') {
+            const { worker } = await import('./mocks/browser')
+            await worker.start({
+                onUnhandledRequest: 'bypass'
+            })
+        }
     }
+
+    setupDevTools()
 }
 
 // 全局錯誤處理
 window.addEventListener('unhandledrejection', event => {
     console.error('未處理的 Promise 錯誤:', event.reason)
-    store.dispatch('setError', {
+    store.dispatch('app/setError', {
         message: event.reason.message,
         type: 'error',
         stack: event.reason.stack
     })
 })
 
-window.onerror = (message, source, lineno, colno, error) => {
-    console.error('全局 JavaScript 錯誤:', { message, source, lineno, colno, error })
-    store.dispatch('setError', {
-        message,
-        type: 'error',
-        stack: error?.stack
-    })
-    return false
-}
-
 // PWA 配置
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
-    window.addEventListener('load', async () => {
-        try {
-            const registration = await navigator.serviceWorker.register('/sw.js', {
-                scope: '/'
-            })
-            console.log('SW registered:', registration)
-        } catch (error) {
-            console.error('SW registration failed:', error)
+    window.addEventListener('load', () => {
+        const registerSW = async () => {
+            try {
+                const registration = await navigator.serviceWorker.register('/sw.js', {
+                    scope: '/'
+                })
+                console.log('SW registered:', registration)
+            } catch (error) {
+                console.error('SW registration failed:', error)
+            }
         }
+        registerSW()
     })
 }

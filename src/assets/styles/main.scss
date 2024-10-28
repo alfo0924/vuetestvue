@@ -1,0 +1,31 @@
+// 引入 Bootstrap
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+
+// 全局變數
+:root {
+  --primary-color: #0d6efd;
+  --secondary-color: #6c757d;
+}
+
+// 基礎樣式
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#app {
+  height: 100%;
+}
+
+// 通用類
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -7,6 +7,7 @@ import { visualizer } from 'rollup-plugin-visualizer'
 import viteCompression from 'vite-plugin-compression'
 import viteImagemin from 'vite-plugin-imagemin'
 import { VitePWA } from 'vite-plugin-pwa'
+import { viteMockServe } from 'vite-plugin-mock'
 
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
@@ -31,7 +32,6 @@ export default defineConfig(({ command, mode }) => {
       vueInspector(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
         manifest: {
           name: '市民卡系統',
           short_name: '市民卡',
@@ -40,12 +40,12 @@ export default defineConfig(({ command, mode }) => {
           background_color: '#ffffff',
           icons: [
             {
-              src: 'img/icons/android-chrome-192x192.png',
+              src: '/img/icons/android-chrome-192x192.png',
               sizes: '192x192',
               type: 'image/png'
             },
             {
-              src: 'img/icons/android-chrome-512x512.png',
+              src: '/img/icons/android-chrome-512x512.png',
               sizes: '512x512',
               type: 'image/png'
             }
@@ -67,11 +67,28 @@ export default defineConfig(({ command, mode }) => {
                 expiration: {
                   maxEntries: 100,
                   maxAgeSeconds: 60 * 60 * 24
+                },
+                cacheableResponse: {
+                  statuses: [0, 200]
                 }
+              }
+            },
+            {
+              urlPattern: /\.(js|css|png|jpg|jpeg|gif|svg|ico)$/,
+              handler: 'StaleWhileRevalidate',
+              options: {
+                cacheName: 'assets-cache'
               }
             }
           ]
         }
+      }),
+      viteMockServe({
+        mockPath: 'mock',
+        localEnabled: !isProduction,
+        prodEnabled: false,
+        supportTs: false,
+        logger: true
       }),
       isProduction && visualizer({
         open: true,
@@ -82,32 +99,18 @@ export default defineConfig(({ command, mode }) => {
       isProduction && viteCompression({
         verbose: true,
         algorithm: 'gzip',
-        ext: '.gz'
+        ext: '.gz',
+        threshold: 10240
       }),
       isProduction && viteImagemin({
-        gifsicle: {
-          optimizationLevel: 7,
-          interlaced: false
-        },
-        optipng: {
-          optimizationLevel: 7
-        },
-        mozjpeg: {
-          quality: 80
-        },
-        pngquant: {
-          quality: [0.8, 0.9],
-          speed: 4
-        },
+        gifsicle: { optimizationLevel: 7 },
+        optipng: { optimizationLevel: 7 },
+        mozjpeg: { quality: 80 },
+        pngquant: { quality: [0.8, 0.9], speed: 4 },
         svgo: {
           plugins: [
-            {
-              name: 'removeViewBox'
-            },
-            {
-              name: 'removeEmptyAttrs',
-              active: false
-            }
+            { name: 'removeViewBox' },
+            { name: 'removeEmptyAttrs', active: false }
           ]
         }
       })
@@ -125,41 +128,8 @@ export default defineConfig(({ command, mode }) => {
         '@hooks': fileURLToPath(new URL('./src/hooks', import.meta.url)),
         '@constants': fileURLToPath(new URL('./src/constants', import.meta.url)),
         '@layouts': fileURLToPath(new URL('./src/layouts', import.meta.url)),
-        '@services': fileURLToPath(new URL('./src/services', import.meta.url))
-      },
-      extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json', '.vue']
-    },
-
-    server: {
-      host: true,
-      port: 8080,
-      strictPort: true,
-      https: false,
-      open: true,
-      cors: true,
-      proxy: {
-        '/api': {
-          target: env.VITE_API_URL,
-          changeOrigin: true,
-          rewrite: path => path.replace(/^\/api/, ''),
-          secure: false,
-          ws: true,
-          timeout: 30000
-        },
-        '/upload': {
-          target: env.VITE_UPLOAD_URL,
-          changeOrigin: true,
-          rewrite: path => path.replace(/^\/upload/, ''),
-          secure: false
-        },
-        '/ws': {
-          target: env.VITE_WS_URL,
-          ws: true,
-          changeOrigin: true
-        }
-      },
-      watch: {
-        usePolling: true
+        '@services': fileURLToPath(new URL('./src/services', import.meta.url)),
+        '@modules': fileURLToPath(new URL('./src/modules', import.meta.url))
       }
     },
 
@@ -167,36 +137,55 @@ export default defineConfig(({ command, mode }) => {
       target: ['es2020', 'edge88', 'firefox78', 'chrome87', 'safari14'],
       outDir: 'dist',
       assetsDir: 'assets',
-      assetsInlineLimit: 4096,
       cssCodeSplit: true,
       sourcemap: !isProduction,
       minify: isProduction ? 'esbuild' : false,
-      reportCompressedSize: false,
-      chunkSizeWarningLimit: 2000,
       rollupOptions: {
         output: {
-          chunkFileNames: isProduction ? 'js/[name].[hash].js' : 'js/[name].js',
-          entryFileNames: isProduction ? 'js/[name].[hash].js' : 'js/[name].js',
-          assetFileNames: isProduction ? 'assets/[name].[hash].[ext]' : 'assets/[name].[ext]',
           manualChunks: {
             'core-vendor': ['vue', 'vue-router', 'pinia'],
             'auth': ['jwt-decode', 'vee-validate', 'yup'],
             'utils': ['axios', 'dayjs', 'lodash-es'],
             'ui': ['bootstrap', 'bootstrap-icons', 'sweetalert2'],
-            'features': {
-              include: [
-                /src\/store\/modules\/.+/,
-                /src\/views\/(members|movies|bookings|benefits|venues|wallet)/
-              ]
-            },
-            'common': {
-              include: [
-                /src\/components\/common\/.+/,
-                /src\/utils\/.+/,
-                /src\/hooks\/.+/
-              ]
-            }
+            'citizen-card': [
+              /src\/(views|store)\/members/,
+              /src\/(views|store)\/cards/,
+              /src\/(views|store)\/verifications/
+            ],
+            'movie-system': [
+              /src\/(views|store)\/movies/,
+              /src\/(views|store)\/venues/,
+              /src\/(views|store)\/bookings/
+            ],
+            'wallet-benefits': [
+              /src\/(views|store)\/wallet/,
+              /src\/(views|store)\/benefits/,
+              /src\/(views|store)\/transactions/
+            ],
+            'common': [
+              /src\/components\/common/,
+              /src\/utils/,
+              /src\/hooks/
+            ]
           }
+        }
+      }
+    },
+
+    server: {
+      host: true,
+      port: 8080,
+      proxy: {
+        '/api': {
+          target: env.VITE_API_URL,
+          changeOrigin: true,
+          rewrite: path => path.replace(/^\/api/, ''),
+          ws: true
+        },
+        '/upload': {
+          target: env.VITE_UPLOAD_URL,
+          changeOrigin: true,
+          rewrite: path => path.replace(/^\/upload/, '')
         }
       }
     },
@@ -210,9 +199,6 @@ export default defineConfig(({ command, mode }) => {
             @import "@/assets/styles/mixins.scss";
           `
         }
-      },
-      modules: {
-        localsConvention: 'camelCaseOnly'
       }
     },
 
@@ -224,20 +210,18 @@ export default defineConfig(({ command, mode }) => {
         'axios',
         'dayjs',
         'jwt-decode',
-        'bootstrap',
-        'bootstrap-icons',
-        'sweetalert2',
         'vee-validate',
         'yup',
-        'lodash-es'
-      ],
-      exclude: ['vue-demi']
+        'lodash-es',
+        'sweetalert2',
+        'bootstrap',
+        'bootstrap-icons'
+      ]
     },
 
     test: {
       globals: true,
       environment: 'happy-dom',
-      setupFiles: ['./test/setup.js'],
       coverage: {
         provider: 'v8',
         reporter: ['text', 'json', 'html', 'lcov'],
@@ -252,13 +236,6 @@ export default defineConfig(({ command, mode }) => {
           '**/*.test.{js,ts}'
         ]
       }
-    },
-
-    define: {
-      __VUE_OPTIONS_API__: true,
-      __VUE_PROD_DEVTOOLS__: !isProduction,
-      __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: !isProduction,
-      'process.env': env
     }
   }
 })

@@ -117,7 +117,7 @@ vuetestvue/
 ├── .env                   # 環境變數
 ├── .env.development
 ├── .env.production
-├── .eslintrc.js          # ESLint配置
+├── .eslintrc.cjs          # ESLint配置
 ├── .prettierrc           # Prettier配置
 ├── .gitignore
 ├── babel.config.js
@@ -225,7 +225,7 @@ src/
 - `.env` - 環境變數
 - `.env.development`
 - `.env.production`
-- `.eslintrc.js` - ESLint配置
+- `.eslintrc.cjs` - ESLint配置
 - `.prettierrc` - Prettier配置
 - `.gitignore`
 - `babel.config.js`
